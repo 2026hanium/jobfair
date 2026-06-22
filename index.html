@@ -269,7 +269,11 @@ try {
 } catch (e) { console.warn("Kakao init skipped:", e); }
 
 const EVENT_NAME = "2026 창업 멘토링 박람회";
-const STORAGE_PREFIX = "guestbook_entry:";
+
+/* ===== 구글 시트 연동 =====
+   Apps Script 배포 후 생성되는 "웹 앱 URL"을 아래에 붙여넣으세요.
+   예: https://script.google.com/macros/s/AKfycb.../exec */
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbypMkBGCWosap924pogn_fX50mt-g55rnhO0wVVaz7kG6U0OabFCFE83LTfFeijhFUjyw/exec";
 
 function showView(id){
   ["view-form","view-success","view-admin"].forEach(v=>{
@@ -306,11 +310,16 @@ document.getElementById("registerForm").addEventListener("submit", async functio
   btn.disabled = true;
   btn.textContent = "등록 중...";
 
-  const id = Date.now() + "_" + Math.random().toString(36).slice(2,8);
-  const entry = { id, name, school, phone, createdAt: Date.now() };
+  const entry = { name, school, phone, createdAt: Date.now() };
 
   try {
-    await window.storage.set(STORAGE_PREFIX + id, JSON.stringify(entry), true);
+    const res = await fetch(SHEET_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(entry)
+    });
+    const data = await res.json();
+    if (!data || data.result !== "success") throw new Error(data && data.message);
     lastEntry = entry;
     document.getElementById("successName").textContent = name + "님, 참가해 주셔서 감사합니다.";
     showView("view-success");
@@ -378,16 +387,10 @@ async function loadAdminData(){
   const wrap = document.getElementById("adminTableWrap");
   wrap.innerHTML = '<div class="empty">불러오는 중...</div>';
   try {
-    const list = await window.storage.list(STORAGE_PREFIX, true);
-    const keys = (list && list.keys) ? list.keys : [];
-    const entries = [];
-    for (const k of keys) {
-      try {
-        const res = await window.storage.get(k, true);
-        if (res && res.value) entries.push(JSON.parse(res.value));
-      } catch (e) {}
-    }
-    entries.sort((a,b)=> b.createdAt - a.createdAt);
+    const res = await fetch(SHEET_API_URL, { method: "GET" });
+    const data = await res.json();
+    const entries = (data && data.entries) ? data.entries : [];
+    entries.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
     cachedEntries = entries;
 
     document.getElementById("statCount").textContent = entries.length;
