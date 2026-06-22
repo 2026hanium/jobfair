@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>박람회 참가자 방명록</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"
+  integrity="sha384-DKYJZ8NLiK8MN4/C5P2dtUqA1c1pP6vqDQRkUiCFlqyT6Sn8RV5W0kc4O+xqDC5W"
+  crossorigin="anonymous"></script>
+<style>
+  :root{
+    --ink:#15202B;
+    --sub:#5B6B79;
+    --line:#E2E8ED;
+    --bg:#F6F8FA;
+    --accent:#0F6E56;
+    --accent-dark:#085041;
+    --accent-soft:#E1F5EE;
+    --danger:#A32D2D;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:28px 20px 60px;}
+  .badge{
+    display:inline-block;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.04em;
+    color:var(--accent-dark);
+    background:var(--accent-soft);
+    padding:4px 10px;
+    border-radius:999px;
+    margin-bottom:14px;
+  }
+  h1{font-size:21px;font-weight:700;margin:0 0 4px;line-height:1.35;}
+  p.desc{font-size:14px;color:var(--sub);margin:0 0 24px;line-height:1.6;}
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 6px;
+  }
+  .field{margin-bottom:18px;}
+  input, select{
+    width:100%;
+    height:46px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0 14px;
+    font-size:15px;
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    -webkit-appearance:none;
+  }
+  input:focus, select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .hint{font-size:12px;color:var(--sub);margin-top:6px;}
+  button.primary{
+    width:100%;
+    height:50px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  button.primary:active{background:var(--accent-dark);}
+  button.primary:disabled{background:#B9C2C9;cursor:default;}
+  .error{
+    font-size:13px;
+    color:var(--danger);
+    margin-top:4px;
+    display:none;
+  }
+  .success{
+    text-align:center;
+    padding:36px 8px 8px;
+  }
+  .success .check{
+    width:56px;height:56px;border-radius:50%;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+    font-size:28px;color:var(--accent-dark);
+  }
+  .success h2{font-size:19px;font-weight:700;margin:0 0 6px;}
+  .success p{font-size:14px;color:var(--sub);margin:0 0 28px;}
+  .kakao-btn{
+    width:100%;
+    height:50px;
+    border:none;
+    border-radius:10px;
+    background:#FEE500;
+    color:#181600;
+    font-size:15px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    cursor:pointer;
+  }
+  .kakao-btn img{width:20px;height:20px;}
+  .ghost-btn{
+    width:100%;
+    height:46px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+    font-size:14px;
+    font-weight:600;
+    margin-top:10px;
+    cursor:pointer;
+  }
+  .admin-toggle{
+    text-align:center;
+    margin-top:28px;
+  }
+  .admin-toggle a{
+    font-size:12px;
+    color:var(--sub);
+    text-decoration:none;
+    border-bottom:1px solid var(--line);
+  }
+  .hidden{display:none;}
+  table.admin{width:100%;border-collapse:collapse;font-size:13px;}
+  table.admin th, table.admin td{
+    text-align:left;
+    padding:9px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  table.admin th{color:var(--sub);font-weight:600;font-size:12px;}
+  .stat-row{display:flex;gap:10px;margin-bottom:18px;}
+  .stat{
+    flex:1;
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:14px 16px;
+  }
+  .stat .num{font-size:22px;font-weight:700;color:var(--accent-dark);}
+  .stat .lbl{font-size:12px;color:var(--accent-dark);opacity:.85;}
+  .toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .toprow h1{margin:0;}
+  .small-btn{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:8px;
+    padding:7px 12px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .qr-box{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+    text-align:center;
+    margin-bottom:20px;
+  }
+  .qr-box .qr-target{display:inline-block;margin:10px 0;}
+  .qr-box .url{font-size:12px;color:var(--sub);word-break:break-all;}
+  .empty{text-align:center;color:var(--sub);font-size:13px;padding:30px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="view-form">
+    <span class="badge">참가자 등록</span>
+    <h1>박람회 방명록</h1>
+    <p class="desc">아래 정보를 입력하고 등록을 완료해 주세요.</p>
+
+    <div class="card">
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="name">이름</label>
+          <input type="text" id="name" placeholder="홍길동" autocomplete="name">
+          <div class="error" id="err-name">이름을 입력해 주세요.</div>
+        </div>
+        <div class="field">
+          <label for="school">학교</label>
+          <input type="text" id="school" placeholder="○○대학교">
+          <div class="error" id="err-school">학교를 입력해 주세요.</div>
+        </div>
+        <div class="field">
+          <label for="phone">연락처</label>
+          <input type="tel" id="phone" placeholder="010-0000-0000" autocomplete="tel">
+          <div class="error" id="err-phone">올바른 연락처를 입력해 주세요.</div>
+        </div>
+        <button type="submit" class="primary" id="submitBtn">등록하기</button>
+      </form>
+    </div>
+
+    <div class="admin-toggle"><a href="#" id="goAdmin">관리자 화면</a></div>
+  </div>
+
+  <div id="view-success" class="hidden">
+    <div class="card success">
+      <div class="check"><i>✓</i></div>
+      <h2>등록이 완료되었어요</h2>
+      <p id="successName">참가해 주셔서 감사합니다.</p>
+      <button class="kakao-btn" id="kakaoShareBtn">
+        카카오톡으로 등록 공유하기
+      </button>
+      <button class="ghost-btn" id="backBtn">처음으로</button>
+    </div>
+  </div>
+
+  <div id="view-admin" class="hidden">
+    <div class="toprow">
+      <h1>관리자</h1>
+      <button class="small-btn" id="closeAdmin">닫기</button>
+    </div>
+
+    <div class="qr-box">
+      <div class="hint" style="margin-bottom:4px;">참가자용 등록 QR코드</div>
+      <div class="qr-target" id="qrcode"></div>
+      <div class="url" id="qrUrl"></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="statCount">0</div><div class="lbl">총 등록자</div></div>
+      <div class="stat"><div class="num" id="statToday">0</div><div class="lbl">오늘 등록</div></div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:600;">등록 명단</span>
+        <button class="small-btn" id="exportBtn">CSV 다운로드</button>
+      </div>
+      <div id="adminTableWrap">
+        <div class="empty">아직 등록된 참가자가 없습니다.</div>
+      </div>
+    </div>
+    <button class="ghost-btn" id="refreshBtn">새로고침</button>
+  </div>
+
+</div>
+
+<script>
+/* ===== Kakao SDK 초기화 =====
+   카카오 디벨로퍼스 > 내 애플리케이션 > 앱 키 > JavaScript 키를 아래에 붙여넣으세요. */
+const KAKAO_JS_KEY = "dd00559b0406a0d0777dca32e54fa0bf";
+
+try {
+  if (window.Kakao && !Kakao.isInitialized() && KAKAO_JS_KEY.indexOf("여기에") === -1) {
+    Kakao.init(KAKAO_JS_KEY);
+  }
+} catch (e) { console.warn("Kakao init skipped:", e); }
+
+const EVENT_NAME = "2026 창업 멘토링 박람회";
+const STORAGE_PREFIX = "guestbook_entry:";
+
+function showView(id){
+  ["view-form","view-success","view-admin"].forEach(v=>{
+    document.getElementById(v).classList.toggle("hidden", v !== id);
+  });
+}
+
+function validatePhone(v){
+  return /^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(v.trim());
+}
+
+function formatDate(ts){
+  const d = new Date(ts);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "
+    +String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+}
+
+let lastEntry = null;
+
+document.getElementById("registerForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const name = document.getElementById("name").value.trim();
+  const school = document.getElementById("school").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+
+  let ok = true;
+  document.getElementById("err-name").style.display = name ? "none" : "block";
+  document.getElementById("err-school").style.display = school ? "none" : "block";
+  const phoneOk = validatePhone(phone);
+  document.getElementById("err-phone").style.display = phoneOk ? "none" : "block";
+  if (!name || !school || !phoneOk) return;
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "등록 중...";
+
+  const id = Date.now() + "_" + Math.random().toString(36).slice(2,8);
+  const entry = { id, name, school, phone, createdAt: Date.now() };
+
+  try {
+    await window.storage.set(STORAGE_PREFIX + id, JSON.stringify(entry), true);
+    lastEntry = entry;
+    document.getElementById("successName").textContent = name + "님, 참가해 주셔서 감사합니다.";
+    showView("view-success");
+    document.getElementById("registerForm").reset();
+  } catch (err) {
+    alert("등록 중 오류가 발생했어요. 다시 시도해 주세요.");
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "등록하기";
+  }
+});
+
+document.getElementById("kakaoShareBtn").addEventListener("click", function(){
+  if (!window.Kakao || !Kakao.isInitialized()) {
+    alert("카카오 공유 기능을 사용하려면 JavaScript 키 설정이 필요해요.");
+    return;
+  }
+  Kakao.Share.sendDefault({
+    objectType: "feed",
+    content: {
+      title: EVENT_NAME + " 참가 등록 완료",
+      description: (lastEntry ? lastEntry.name + "님, " : "") + "방명록 등록을 완료했습니다!",
+      imageUrl: "https://via.placeholder.com/600x315.png?text=" + encodeURIComponent(EVENT_NAME),
+      link: { mobileWebUrl: location.href, webUrl: location.href }
+    },
+    buttons: [
+      { title: "나도 등록하기", link: { mobileWebUrl: location.href, webUrl: location.href } }
+    ]
+  });
+});
+
+document.getElementById("backBtn").addEventListener("click", function(){
+  showView("view-form");
+});
+
+document.getElementById("goAdmin").addEventListener("click", function(e){
+  e.preventDefault();
+  openAdmin();
+});
+document.getElementById("closeAdmin").addEventListener("click", function(){
+  showView("view-form");
+});
+document.getElementById("refreshBtn").addEventListener("click", loadAdminData);
+document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+let cachedEntries = [];
+
+async function openAdmin(){
+  showView("view-admin");
+  renderQR();
+  await loadAdminData();
+}
+
+function renderQR(){
+  const qrEl = document.getElementById("qrcode");
+  qrEl.innerHTML = "";
+  document.getElementById("qrUrl").textContent = location.href;
+  if (window.QRCode) {
+    new QRCode(qrEl, { text: location.href, width: 160, height: 160, colorDark: "#15202B", colorLight: "#ffffff" });
+  }
+}
+
+async function loadAdminData(){
+  const wrap = document.getElementById("adminTableWrap");
+  wrap.innerHTML = '<div class="empty">불러오는 중...</div>';
+  try {
+    const list = await window.storage.list(STORAGE_PREFIX, true);
+    const keys = (list && list.keys) ? list.keys : [];
+    const entries = [];
+    for (const k of keys) {
+      try {
+        const res = await window.storage.get(k, true);
+        if (res && res.value) entries.push(JSON.parse(res.value));
+      } catch (e) {}
+    }
+    entries.sort((a,b)=> b.createdAt - a.createdAt);
+    cachedEntries = entries;
+
+    document.getElementById("statCount").textContent = entries.length;
+    const todayStr = new Date().toDateString();
+    const todayCount = entries.filter(en => new Date(en.createdAt).toDateString() === todayStr).length;
+    document.getElementById("statToday").textContent = todayCount;
+
+    if (entries.length === 0) {
+      wrap.innerHTML = '<div class="empty">아직 등록된 참가자가 없습니다.</div>';
+      return;
+    }
+
+    let html = '<table class="admin"><tr><th>이름</th><th>학교</th><th>연락처</th><th>등록 시각</th></tr>';
+    entries.forEach(en=>{
+      html += `<tr><td>${escapeHtml(en.name)}</td><td>${escapeHtml(en.school)}</td><td>${escapeHtml(en.phone)}</td><td>${formatDate(en.createdAt)}</td></tr>`;
+    });
+    html += "</table>";
+    wrap.innerHTML = html;
+  } catch (err) {
+    wrap.innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+    console.error(err);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function exportCSV(){
+  if (!cachedEntries.length) { alert("내보낼 데이터가 없습니다."); return; }
+  let csv = "이름,학교,연락처,등록시각\n";
+  cachedEntries.forEach(en=>{
+    csv += `"${en.name}","${en.school}","${en.phone}","${formatDate(en.createdAt)}"\n`;
+  });
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "방명록_명단_" + new Date().toISOString().slice(0,10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+if (location.search.indexOf("admin=1") !== -1) {
+  openAdmin();
+}
+</script>
+</body>
+</html>
