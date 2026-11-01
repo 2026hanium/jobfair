@@ -116,6 +116,15 @@
       let node;
       while ((node = walker.nextNode())) translateNode(node);
       document.body.querySelectorAll("input,textarea,select,button,[title]").forEach(translateAttributes);
+      // Explicit canonical keys prevent question labels from retaining a previously selected language.
+      document.body.querySelectorAll("[data-camp-source]").forEach(function (el) {
+        const encoded = el.getAttribute("data-camp-source");
+        if (!encoded) return;
+        let original = encoded;
+        try { original = decodeURIComponent(encoded); } catch (_) {}
+        const translated = translateText(original);
+        if (el.textContent !== translated) el.textContent = translated;
+      });
     } finally {
       busy = false;
     }
