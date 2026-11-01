@@ -2,16 +2,24 @@
    Static survey wording is translated; user-entered personal information is never sent to a translator. */
 (function () {
   "use strict";
-  const supported = ["ko", "en", "zh-CN", "vi", "uz", "mn", "ru"];
-  const codes = ["ko", "en", "zh-CN", "vi", "uz", "mn", "ru"];
+  const supported = ["ko", "en", "zh-CN", "vi", "uz", "mn", "ru", "ar", "id", "ur"];
+  const codes = ["ko", "en", "zh-CN", "vi", "uz", "mn", "ru", "ar", "id", "ur"];
   const translations = Object.fromEntries(codes.map(code => [code, new Map()]));
   const rows = window.KCAMP_TRANSLATION_ROWS || [];
+  const extraRows = window.KCAMP_EXTRA_LANG_ROWS || [];
 
   for (const row of rows) {
-    if (!Array.isArray(row) || row.length !== codes.length) continue;
-    for (let i = 1; i < codes.length; i++) {
+    if (!Array.isArray(row) || row.length !== 7) continue;
+    for (let i = 1; i < 7; i++) {
       if (row[i] && row[i] !== row[0]) translations[codes[i]].set(row[0], row[i]);
     }
+  }
+  const extraCodes = ["ar", "id", "ur"];
+  for (const row of extraRows) {
+    if (!Array.isArray(row) || row.length !== 4) continue;
+    extraCodes.forEach((lang, i) => {
+      if (row[i+1] && row[i+1] !== row[0]) translations[lang].set(row[0], row[i+1]);
+    });
   }
 
   function detectLanguage() {
@@ -21,6 +29,9 @@
     const preferences = Array.from(navigator.languages || [navigator.language || "ko"]);
     for (const pref of preferences) {
       const low = String(pref).toLowerCase();
+      if (low.startsWith("ar")) return "ar";
+      if (low.startsWith("id") || low.startsWith("in-ID")) return "id";
+      if (low.startsWith("ur")) return "ur";
       if (low.startsWith("zh")) return "zh-CN";
       if (low.startsWith("vi")) return "vi";
       if (low.startsWith("uz")) return "uz";
@@ -109,6 +120,7 @@
     busy = true;
     try {
       document.documentElement.lang = selected;
+      document.documentElement.dir = (selected === "ar" || selected === "ur") ? "rtl" : "ltr";
       document.title = translateText("K-유학생 취업캠프");
       const select = document.getElementById("kcamp-language");
       if (select && select.value !== selected) select.value = selected;
