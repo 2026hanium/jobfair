@@ -83,7 +83,7 @@
   }
 
   function translateAttributes(element) {
-    if (!element.matches("input,textarea,button,[title]")) return;
+    if (!element.matches("input,textarea,select,button,[title]")) return;
     if (element.closest("[data-no-translate]")) return;
     if (!originalAttributes.has(element)) {
       originalAttributes.set(element, {
@@ -115,7 +115,7 @@
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       let node;
       while ((node = walker.nextNode())) translateNode(node);
-      document.body.querySelectorAll("input,textarea,button,[title]").forEach(translateAttributes);
+      document.body.querySelectorAll("input,textarea,select,button,[title]").forEach(translateAttributes);
     } finally {
       busy = false;
     }
