@@ -134,6 +134,7 @@
     if (!supported.includes(code)) return;
     selected = code;
     try { localStorage.setItem("kcamp-language", code); } catch (_) {}
+    if (typeof window.kcampRerender === "function") window.kcampRerender();
     updatePage();
   }
 
