@@ -1,0 +1,31 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>K-CAMP 만족도 결과 관리자</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f7f8fa;color:#25364a;font:15px/1.6 "Pretendard Variable","Apple SD Gothic Neo",system-ui,sans-serif}header{background:#10213a;color:white;padding:25px 20px;border-bottom:4px solid #d7b477}header h1{margin:0;font-size:26px}main{width:min(1100px,calc(100% - 26px));margin:24px auto;background:white;border:1px solid #e0e5eb;border-radius:8px;padding:25px}.controls{display:flex;flex-wrap:wrap;gap:8px}input,button{font:inherit;border:1px solid #cbd4de;padding:10px 14px;border-radius:5px;min-height:45px}input{min-width:260px}button{background:#762d43;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.6}.note{color:#69788a;font-size:13px}.summary{font-weight:750;color:#172942;margin-top:20px}.scroll{overflow:auto;max-height:65vh;margin-top:15px}table{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px}th,td{border:1px solid #dde4eb;padding:8px;vertical-align:top;max-width:290px;white-space:pre-wrap}th{background:#172b44;color:#fff;position:sticky;top:0}tr:nth-child(2n){background:#f7f9fb}a{color:#762d43}#export{display:none}</style></head>
+<body><header><h1>K-CAMP 만족도 조사 · 관리자</h1></header><main><p class="note">기존 캠프 관리자 비밀번호를 입력하면 제출 현황을 확인할 수 있습니다. 응답은 운영 개선 목적으로만 사용해 주세요.</p>
+<div class="controls"><input type="password" id="password" autocomplete="off" placeholder="관리자 비밀번호"><button id="view">응답 조회</button><button id="export">전체 CSV 다운로드</button></div><p id="status" role="status"></p><p id="total" class="summary"></p><div id="table" class="scroll"></div><p><a href="./satisfaction.html">설문으로 돌아가기</a></p></main>
+<script>
+const endpoint="https://jafptklbkutzszwoxyqr.supabase.co/functions/v1/kcamp-satisfaction";
+const el=id=>document.getElementById(id);
+const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let rows=[],columns=[];
+el("view").addEventListener("click",async()=>{
+ el("view").disabled=true;el("status").textContent="응답을 불러오는 중입니다.";
+ try{
+ const r=await fetch(endpoint+"?action=admin-list",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:el("password").value})});
+ const result=await r.json();if(!r.ok)throw new Error(result.error||"조회 실패");
+ rows=result.rows||[];columns=result.columns||[];
+ const heads=["제출시각","이름",...columns.map(c=>c[1]),"기타 의견"];
+ el("total").textContent="응답 총 "+rows.length+"건";
+ const cells=rows.map(x=>[x.created_at,x.name,...columns.map(c=>x.ratings?.[c[0]]||""),x.comment||""]);
+ el("table").innerHTML="<table><thead><tr>"+heads.map(x=>"<th>"+safe(x)+"</th>").join("")+"</tr></thead><tbody>"+cells.map(row=>"<tr>"+row.map(x=>"<td>"+safe(x)+"</td>").join("")+"</tr>").join("")+"</tbody></table>";
+ el("export").style.display="inline-block";el("status").textContent="";
+ }catch(e){el("status").textContent=e.message||"조회 실패";}finally{el("view").disabled=false}
+});
+el("export").addEventListener("click",()=>{
+ const esc=v=>{const raw=String(v??"");const x=/^[=+@\-\t\r]/.test(raw)?"'"+raw:raw;return '"'+x.replace(/"/g,'""')+'"'};
+ const headers=["제출시각","이름",...columns.map(c=>c[1]),"기타 의견"];
+ const data=rows.map(x=>[x.created_at,x.name,...columns.map(c=>x.ratings?.[c[0]]||""),x.comment||""]);
+ const csv="\ufeff"+[headers,...data].map(r=>r.map(esc).join(",")).join("\r\n");
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ const a=document.createElement("a");a.href=url;a.download="K-CAMP_만족도_결과.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+</script></body></html>
